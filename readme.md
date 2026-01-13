@@ -1,25 +1,23 @@
-## Daily Scrum – Concise Summary
+### Topic
+Atlan Snowflake connector authentication within JPMC
 
-### Anthony (ATLAN-1139, ATLAN-1140)
-- Completed model changes for report business context & data tailoring  
-- Shared feature branch with Bharat & Emmanuel  
-- Working on app-level testing; Windows 11 setup ongoing  
-- **Blockers:** None
+### Key Points
+- Atlan connector supports **basic auth** and **key-pair auth**.
+- **JPMC requires External OAuth (IDWorks)** for Snowflake service-to-service access.
+- Current sample implementation handles **token expiry client-side**, not via Snowflake JDBC auto-refresh.
+- Unclear whether **Personal Access Tokens (PATs)** are supported or permitted in JPMC.
+- Need a **fully automated, policy-compliant authentication** approach.
 
-### Emmanuel (ATLAN-1194, ATLAN-1618)
-- ATLAN-1194 on hold (dependency)  
-- Working on Harvester changes for updated report data model  
-- Pairing planned to align on model updates  
-- **Blockers:** None
+### Decision
+- Engage **JPMC Snowflake Platform** and **Application Security** teams to validate supported authentication mechanisms and access models.
 
-### Stephen (ATLAN-1088)
-- Identified service parameters; drafted RBAC roles/bindings (not committed)  
-- Preparing 1-pager and conceptual demo for approval  
-- **Blockers:** Awaiting discussion with Kailash
+### Contacts
+- Snowflake Platform: **Taylor Payne**, **Karen**
 
-### Nawaz (Tableau-114, Snowflake support)
-- Reached out to Tableau & Snowflake platform teams; info gathering in progress  
-- **Blockers:** None
+### Action Items
+- Send formal email (include Nawaz, Atlan, DataCompass leads).
+- Schedule working session with Snowflake admins.
+- Align internally with **Avinash** and **Abby Nash** on access scope and requirements.
 
-### Sam
-- Absent
+### Status
+- **Authentication is the primary blocker**; awaiting platform and security guidance.
