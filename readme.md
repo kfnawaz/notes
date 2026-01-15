@@ -1,107 +1,81 @@
-# Scrum Meeting – Condensed Minutes
+Meeting Minutes Summary
+Purpose
 
-**Date:** Not specified  
-**Meeting Type:** Daily Scrum  
-**Format:** Jira-based updates (Done / Next / Blockers)
+Align on a Snowflake authentication approach for the connector, confirm whether token refresh is required, and agree on the next steps to unblock Snowflake onboarding and UAT environment issues.
 
----
+Key Discussion Points
 
-## Chris
+Token validity is ~12 hours based on prior usage patterns (similar tokens used in other integrations). The team is confident token refresh is not needed for Phase 1, assuming crawler/miner jobs complete within that window.
 
-**Jira:** ATLAN-1088 – Setup `kubectl` remoting to ATLAN environments
+The main engineering complexity was token refresh handling. Passing a valid token into the Snowflake driver is considered straightforward.
 
-### Done
-- Met with Nawaz and Kailash to review purpose, approach, and implementation details.
+A concern was raised: if workloads become very large (e.g., very frequent queries / extreme scale), token refresh may be needed later. The consensus: not a near-term risk given the initial onboarding scope.
 
-### Next
-- Apply configuration changes to the UAT environment.
-- Begin testing once environment access is restored.
+Snowflake access will likely be application-specific (unlike Databricks where broader portfolio access evolved over time). Initial onboarding (CCB Finance) is expected to be small and well within limits.
 
-### Blockers
-- `k3s` service is in a crash loop, blocking `kubectl` access.
+Strong emphasis on time-to-market: Snowflake onboarding has slipped multiple times (Q2 → Q3 → Q4 → now mid/late January), and stakeholders are questioning delivery reliability.
 
-### Actions / Mitigation
-- Contact Avinash.
-- Check with Peter / Forrest for any undocumented recent changes.
-- Engage the SRE team to stabilize the server.
+Decisions
 
----
+Adopt a phased rollout
 
-## Sam
+Phase 1: No refresh logic. Generate token just before job start, store it, and run crawler/miner within token validity window.
 
-**Jira:** ATLAN-1614 – NHCD Workflow Configuration (Databricks)
+Phase 2: Add refresh/robustness only if real operational issues emerge (scale, long jobs, token expiry).
 
-### Done
-- Worked on NHCD workflow configuration for Databricks.
-- Core configuration is nearly complete.
+Redaction capability is already implemented
 
-### Next
-- Add default filter configuration:
-  - Reuse the same default filter JSON from existing Databricks workflows.
-- Update Confluence documentation to explicitly include this step.
+Snowflake miner redaction was reportedly ready as early as September, but rollout was blocked once the team learned the prior authentication approach would not work.
 
-### Blockers
-- None.
+Decouple token generation from the connector
 
-### Notes
-- Will verify Confluence edit permissions and update documentation if allowed.
-- Snowflake connectivity works locally.
-- Will sync with Nawaz later today to validate setup on another machine.
+Avoid embedding token-generation compilation steps into the connector build (painful in Databricks).
 
----
+Prefer the pattern used elsewhere: external job generates token and stores it in a secure location; connector reads token at runtime.
 
-## Emmanuel
+Proposed Technical Approach
 
-### Jira: ATLAN-1618 – Model Change
+Connector will pass values like:
 
-#### Done
-- Updated service layer and test cases to align with recent model changes.
+authenticator = oauth
 
-#### Next
-- Perform end-to-end testing today.
+token = <XYZ>
+into the Snowflake driver and execute queries.
 
-#### Blockers
-- None.
+Token generation and storage should be handled externally (similar to prior patterns using secret storage).
 
----
+A challenge noted: current deployments aren’t on AWS, so the team needs an alternative to AWS Secrets Manager / Lambda refresh patterns (e.g., k3s/Kubernetes secrets + scheduled job/cron-like mechanism).
 
-### Jira: ATLAN-1194 – Finalize Template for Tier-1 Report Registration
+Blockers / Risks
 
-#### Done
-- Began incorporating required fields shared by Bharat.
+UAT environment issue: k3s problems causing instability; the team discussed wiping/reinstalling as a last resort (with caution about recreating secrets).
 
-#### Next
-- Update Jira comments.
-- Schedule a follow-up meeting with Bharat.
-- Move ticket from **Blocked** to **In Progress**.
+Availability of support personnel:
 
-#### Blockers
-- Pending clarification and alignment with Bharat.
+Luis only Thu/Fri; back Monday.
 
----
+Nishant availability unknown.
 
-## Nawaz
+Need to rely on Tech Support ticketing process for k3s/UAT environment issues.
 
-**Jira:** Tableau–Snowflake Connectivity (Exploratory / Ongoing)
+Action Items (Next Steps)
 
-### Context / Progress
-- Working on establishing Tableau ↔ Snowflake connectivity.
-- Asked to focus on identifying which database/schema the consumer connects to, rather than coordinating directly with the platform team.
+Kailash / team: Remove token refresh from PRD and scope; proceed with Phase 1 implementation.
 
-### Current Work
-- Engaging with the ATLAN vendor on Snowflake authentication issues.
+Kailash + Sutorik: Provide an updated delivery date estimate by tomorrow for Phase 1 Snowflake auth.
 
-### Blockers / Risks
-- Vendor facing challenges using OAuth with ID Anywhere (standard enterprise authentication).
-- Vendor proposing alternatives such as Programmatic Access Tokens (PAT).
+Nawaz + team: Ensure token-generation method and “token placement location” plan is ready so the connector can retrieve and pass token to driver.
 
-### Next
-- Meeting scheduled tomorrow with the ATLAN vendor to:
-  - Understand OAuth / ID Anywhere limitations.
-  - Align on a compliant and standard connectivity approach.
+Token decoupling track: Share an internal/external proposal describing what changes are needed on each side (token generator vs connector).
 
----
+UAT/k3s:
 
-## General Notes
-- PVR meeting was scheduled to begin immediately after the scrum.
-- Shavana and Cinder were not present.
+Check Tech Support ticket for context
+
+If needed, proceed with wipe/reinstall carefully (expect secrets recreation)
+
+Engage support via portal/email process if internal SMEs are unavailable
+
+Outcome
+
+The team agreed to ship Snowflake auth quickly with reduced scope (no refresh) to unblock onboarding and regain stakeholder confidence, while running a parallel track to implement a scalable, decoupled token-generation + secret distribution mechanism for future phases.
