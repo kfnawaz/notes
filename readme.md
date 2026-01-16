@@ -1,81 +1,105 @@
-Meeting Minutes Summary
-Purpose
+Scrum Meeting Minutes Summary
+Attendance / Context
 
-Align on a Snowflake authentication approach for the connector, confirm whether token refresh is required, and agree on the next steps to unblock Snowflake onboarding and UAT environment issues.
+Sam is out of office (was out yesterday too).
 
-Key Discussion Points
+Scrum ran ~9:15–9:28.
 
-Token validity is ~12 hours based on prior usage patterns (similar tokens used in other integrations). The team is confident token refresh is not needed for Phase 1, assuming crawler/miner jobs complete within that window.
+Individual Updates
+Sindhuri
 
-The main engineering complexity was token refresh handling. Passing a valid token into the Snowflake driver is considered straightforward.
+Scope: Report model + Fusion sync + DQ Matrix API
 
-A concern was raised: if workloads become very large (e.g., very frequent queries / extreme scale), token refresh may be needed later. The consensus: not a near-term risk given the initial onboarding scope.
+Progress:
 
-Snowflake access will likely be application-specific (unlike Databricks where broader portfolio access evolved over time). Initial onboarding (CCB Finance) is expected to be small and well within limits.
+Report/model changes completed; PR raised and app changes in progress.
 
-Strong emphasis on time-to-market: Snowflake onboarding has slipped multiple times (Q2 → Q3 → Q4 → now mid/late January), and stakeholders are questioning delivery reliability.
+Working with Bharath to align model updates needed for Fusion sync (may still evolve).
 
-Decisions
+Made changes for DQ Matrix API, assessing downstream impact.
 
-Adopt a phased rollout
+Next:
 
-Phase 1: No refresh logic. Generate token just before job start, store it, and run crawler/miner within token validity window.
+Set up a coordination meeting with Pallavi + Sweetie + Bharath + Emmanuel to ensure DQ Matrix API changes don’t break DQ Rules work.
 
-Phase 2: Add refresh/robustness only if real operational issues emerge (scale, long jobs, token expiry).
+Other: Mentioned related story 1140 is also done and similar in scope.
 
-Redaction capability is already implemented
+Emmanuel
 
-Snowflake miner redaction was reportedly ready as early as September, but rollout was blocked once the team learned the prior authentication approach would not work.
+ATLAN-1618 (Model change):
 
-Decouple token generation from the connector
+Completed and tested code changes.
 
-Avoid embedding token-generation compilation steps into the connector build (painful in Databricks).
+Found duplicate key / unique index conflicts during Fusion sync testing.
 
-Prefer the pattern used elsewhere: external job generates token and stores it in a secure location; connector reads token at runtime.
+Implemented logic to update existing records instead of failing on DB duplicate key error.
 
-Proposed Technical Approach
+Next: Review approach with Bharath in the 11:00 AM meeting.
 
-Connector will pass values like:
+ATLAN-1194 (Tier-1 report registration template):
 
-authenticator = oauth
+Drafted template using an example shared by Cindhuri.
 
-token = <XYZ>
-into the Snowflake driver and execute queries.
+Next: Review with Bharath + Sindhuri in the same meeting.
 
-Token generation and storage should be handled externally (similar to prior patterns using secret storage).
+Status: Functionally done; pending Epic Lead review/approval.
 
-A challenge noted: current deployments aren’t on AWS, so the team needs an alternative to AWS Secrets Manager / Lambda refresh patterns (e.g., k3s/Kubernetes secrets + scheduled job/cron-like mechanism).
+Stephen
+
+ATLAN-1088 (kubectl remoting / k3s access):
+
+Blocked due to k3s installation failure triggered during attempts to enable remoting.
+
+Troubleshooting done with Melissa; limited help available from vendor.
+
+Tried reinstall via Jules pipeline: pipeline reported success but did not actually restore binaries/configs.
+
+Next:
+
+Inspect Jules logs to locate failure.
+
+Work with Nawaz + Rick and involve SRE to complete missing steps (service file, etc.).
+
+Noted limited availability today due to an eye appointment, but will continue work.
+
+Tableau + Snowflake connectors (vendor dependency):
+
+Met vendor yesterday; clarified auth requirements.
+
+Vendor committed delivery by January 30 for token-based auth mechanism.
+
+Pilot consumers (CCB) have confirmed scope of assets to crawl for Tableau/Snowflake.
+
+Implementation progress is blocked until vendor delivers updated token-based auth.
+
+Auth approach details:
+
+Tokens based on ID Anywhere.
+
+Connector will expect token as a Kubernetes secret.
+
+A separate process will be needed to generate/refresh token and update secrets.
+
+Stephen pointed Avinash to a library/module (via GSM) that supports ID Anywhere and offered to help.
+
+Decisions / Agreements
+
+No compensation numbers are to be discussed on public calls (explicit reminder issued).
+
+Plan to collaborate more starting Monday once India holiday ends and Nishant is expected back.
 
 Blockers / Risks
 
-UAT environment issue: k3s problems causing instability; the team discussed wiping/reinstalling as a last resort (with caution about recreating secrets).
+ATLAN-1088 blocked by k3s crash/failed reinstall, preventing kubectl remoting progress.
 
-Availability of support personnel:
+Tableau/Snowflake connector rollout blocked on vendor delivery (Jan 30) + secret/token automation work.
 
-Luis only Thu/Fri; back Monday.
+Next Actions
 
-Nishant availability unknown.
+Stephen: Continue k3s recovery (Jules logs + SRE steps) with Nawaz/Rick.
 
-Need to rely on Tech Support ticketing process for k3s/UAT environment issues.
+Emmanuel: Review unique-index handling + template with Bharath/Sindhuri (11:00 AM).
 
-Action Items (Next Steps)
+Sindhuri: Schedule alignment meeting with Pallavi/Sweetie/Bharath/Emmanuel to validate API change impacts.
 
-Kailash / team: Remove token refresh from PRD and scope; proceed with Phase 1 implementation.
-
-Kailash + Sutorik: Provide an updated delivery date estimate by tomorrow for Phase 1 Snowflake auth.
-
-Nawaz + team: Ensure token-generation method and “token placement location” plan is ready so the connector can retrieve and pass token to driver.
-
-Token decoupling track: Share an internal/external proposal describing what changes are needed on each side (token generator vs connector).
-
-UAT/k3s:
-
-Check Tech Support ticket for context
-
-If needed, proceed with wipe/reinstall carefully (expect secrets recreation)
-
-Engage support via portal/email process if internal SMEs are unavailable
-
-Outcome
-
-The team agreed to ship Snowflake auth quickly with reduced scope (no refresh) to unblock onboarding and regain stakeholder confidence, while running a parallel track to implement a scalable, decoupled token-generation + secret distribution mechanism for future phases.
+Team: Prepare for token-as-secret workflow (token generator + Kubernetes secret update process) once vendor delivers auth changes.
