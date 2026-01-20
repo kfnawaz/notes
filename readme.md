@@ -1,101 +1,93 @@
-1️⃣ Formal Meeting Minutes
+# Meeting Summary – Atlan–Snowflake Connector & Metadata Access
 
-Topic: Atlan–Snowflake Connector Onboarding & Metadata Access
-Date: (as per meeting)
-Participants: Platform Team, DataCompass Team, Snowflake Platform, Atlan (to be engaged)
-Prepared By: (Your name)
+## Purpose
+Discuss onboarding and data-access requirements for integrating Atlan with Snowflake, with a focus on metadata ingestion, lineage, and governance constraints.
 
-1. Meeting Objective
+---
 
-To evaluate requirements, constraints, and onboarding steps for integrating Atlan with Snowflake, focusing on metadata ingestion, lineage generation, and governance concerns related to sensitive data access.
+## Key Topics & Discussion
 
-2. Background
+### Metadata Collection & Data Residency
+- Asset discovery and lineage computation are performed by Atlan’s engine.
+- Query history, access history, and raw metadata remain within the JPM platform.
+- Primary concern: exposure of sensitive query predicates and joins.
 
-Atlan requires metadata (assets, lineage, dependencies) to power cataloging and governance use cases.
+### High-Risk Data Elements
+**Major concerns:**
+- Query History  
+- Access History  
 
-Snowflake metadata is available through multiple mechanisms (Information Schema, Account Usage, Query History, Access History).
+- These are not available via Information Schema and raise redaction and security concerns.
+- Technology and CTC partners are especially sensitive to these datasets.
 
-Platform teams are highly protective of query predicates, joins, and access/session details due to security and regulatory concerns.
+### Information Schema vs Account Usage
+- Information Schema is more readily accessible and lower risk.
+- Account Usage provides richer details but includes sensitive histories.
+- No existing Snowflake role cleanly excludes only query/access history.
 
-Prior attempts (2024) were limited due to incomplete onboarding and missing FIDs.
+### Dependency / DST Discussion
+- A Dependency (DST) may be required if new platform capabilities must be built.
+- **Decision:** Do not create DST yet—wait until Atlan clarifies limitations and needs.
 
-3. Key Discussion Points
-3.1 Metadata Processing Model
+### Phased / Conditional Access Approach
+Possible temporary access (with guardrails) if Atlan can:
+- Demonstrate configurability to not consume query/access history.
+- Provide proof (similar to prior DataHub precedent).
 
-Asset discovery and lineage computation occur within Atlan’s processing engine.
+**Alternatives:**
+- Platform-provided redacted views
+- Future APIs
 
-Query history and access history remain within JPM-controlled Snowflake environments.
+### Upcoming Platform Capability
+- A new redacted query-history view is expected later this month.
+- Could partially replace the need for raw query/access history.
+- Retention limitation: Snowflake usage data is only retained for one year.
 
-Primary concern is exposure of sensitive query predicates and joins, not asset metadata itself.
+### Onboarding & Compute
+- DataCompass must onboard as a consuming application.
+- Dedicated warehouse and CLID-based billing required.
+- This onboarding can proceed in parallel, independent of metadata decisions.
 
-3.2 High-Risk Data Elements
+---
 
-The following were flagged as high sensitivity:
+## Decisions / Agreements
+- Proceed with Snowflake onboarding and warehouse setup immediately.
+- Treat query history and access history as **Phase 2**, pending further clarity.
+- No DST creation until requirements and gaps are fully validated.
+- Explore use of the upcoming redacted view as an interim solution.
 
-Query History
+---
 
-Access History
+## Action Items
 
-These are not available via Information Schema and raise governance concerns.
+### For Nawaz / Team
+- Engage Atlan to clarify:
+  - Impact if query history & access history are excluded.
+  - Whether exclusion is configurable and auditable.
+  - Timeline implications under a phased approach.
+- Share delivery timelines and priority milestones.
+- Send Carol a checklist of onboarding steps already completed.
 
-3.3 Information Schema vs Account Usage
+### For Platform / Carol
+- Confirm availability and scope of the new redacted query-history view.
+- Advise on any tactical, short-term access options with governance controls.
 
-Information Schema is relatively safer and broadly accessible.
+### For Tyler
+- Act as day-to-day contact for:
+  - Snowflake onboarding
+  - Warehouse provisioning
+  - CLID and compute tracking
 
-Account Usage contains richer data but introduces risk.
+---
 
-There is no Snowflake role that selectively excludes only query/access history.
+## Next Steps
+- Schedule a follow-up checkpoint (next week).
+- Include Atlan in the next discussion.
+- Prepare a status update for management ahead of the **31st**.
 
-3.4 Dependency (DST) Consideration
+---
 
-A Dependency (DST) may be required if new platform capabilities or views must be built.
-
-Decision taken to delay DST creation until Atlan confirms functional limitations and absolute needs.
-
-3.5 Phased Access Strategy
-
-A phased onboarding approach was discussed:
-
-Phase 1: Proceed without query/access history.
-
-Phase 2: Revisit once redaction, APIs, or views are available.
-
-Temporary access may be possible if Atlan can demonstrate configurability to not consume restricted data.
-
-3.6 Upcoming Platform Capability
-
-A new redacted query-history view is expected later this month.
-
-This may reduce or eliminate the need for raw query/access history.
-
-Limitation: Snowflake retains usage data for only one year.
-
-3.7 Onboarding & Compute
-
-DataCompass must onboard as a consuming application.
-
-Dedicated warehouse and CLID-based billing required.
-
-This onboarding can proceed independently of metadata access decisions.
-
-4. Decisions
-
-Proceed with Snowflake onboarding and warehouse setup immediately.
-
-Treat query history and access history as Phase 2 items.
-
-Do not create a DST until Atlan clarifies constraints and requirements.
-
-Evaluate the upcoming redacted view as a potential interim solution.
-
-5. Action Items
-
-(See Tracker Section below)
-
-6. Next Steps
-
-Schedule a follow-up checkpoint meeting.
-
-Include Atlan representatives in the next discussion.
-
-Provide status update to management ahead of the 31st.
+### Optional Follow-ups
+- Convert this into a formal meeting minutes document
+- Extract a problem statement + decision log
+- Create a tracker/checklist for onboarding and dependencies
