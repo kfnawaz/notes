@@ -1,105 +1,101 @@
-Scrum Meeting Minutes Summary
-Attendance / Context
+1️⃣ Formal Meeting Minutes
 
-Sam is out of office (was out yesterday too).
+Topic: Atlan–Snowflake Connector Onboarding & Metadata Access
+Date: (as per meeting)
+Participants: Platform Team, DataCompass Team, Snowflake Platform, Atlan (to be engaged)
+Prepared By: (Your name)
 
-Scrum ran ~9:15–9:28.
+1. Meeting Objective
 
-Individual Updates
-Sindhuri
+To evaluate requirements, constraints, and onboarding steps for integrating Atlan with Snowflake, focusing on metadata ingestion, lineage generation, and governance concerns related to sensitive data access.
 
-Scope: Report model + Fusion sync + DQ Matrix API
+2. Background
 
-Progress:
+Atlan requires metadata (assets, lineage, dependencies) to power cataloging and governance use cases.
 
-Report/model changes completed; PR raised and app changes in progress.
+Snowflake metadata is available through multiple mechanisms (Information Schema, Account Usage, Query History, Access History).
 
-Working with Bharath to align model updates needed for Fusion sync (may still evolve).
+Platform teams are highly protective of query predicates, joins, and access/session details due to security and regulatory concerns.
 
-Made changes for DQ Matrix API, assessing downstream impact.
+Prior attempts (2024) were limited due to incomplete onboarding and missing FIDs.
 
-Next:
+3. Key Discussion Points
+3.1 Metadata Processing Model
 
-Set up a coordination meeting with Pallavi + Sweetie + Bharath + Emmanuel to ensure DQ Matrix API changes don’t break DQ Rules work.
+Asset discovery and lineage computation occur within Atlan’s processing engine.
 
-Other: Mentioned related story 1140 is also done and similar in scope.
+Query history and access history remain within JPM-controlled Snowflake environments.
 
-Emmanuel
+Primary concern is exposure of sensitive query predicates and joins, not asset metadata itself.
 
-ATLAN-1618 (Model change):
+3.2 High-Risk Data Elements
 
-Completed and tested code changes.
+The following were flagged as high sensitivity:
 
-Found duplicate key / unique index conflicts during Fusion sync testing.
+Query History
 
-Implemented logic to update existing records instead of failing on DB duplicate key error.
+Access History
 
-Next: Review approach with Bharath in the 11:00 AM meeting.
+These are not available via Information Schema and raise governance concerns.
 
-ATLAN-1194 (Tier-1 report registration template):
+3.3 Information Schema vs Account Usage
 
-Drafted template using an example shared by Cindhuri.
+Information Schema is relatively safer and broadly accessible.
 
-Next: Review with Bharath + Sindhuri in the same meeting.
+Account Usage contains richer data but introduces risk.
 
-Status: Functionally done; pending Epic Lead review/approval.
+There is no Snowflake role that selectively excludes only query/access history.
 
-Stephen
+3.4 Dependency (DST) Consideration
 
-ATLAN-1088 (kubectl remoting / k3s access):
+A Dependency (DST) may be required if new platform capabilities or views must be built.
 
-Blocked due to k3s installation failure triggered during attempts to enable remoting.
+Decision taken to delay DST creation until Atlan confirms functional limitations and absolute needs.
 
-Troubleshooting done with Melissa; limited help available from vendor.
+3.5 Phased Access Strategy
 
-Tried reinstall via Jules pipeline: pipeline reported success but did not actually restore binaries/configs.
+A phased onboarding approach was discussed:
 
-Next:
+Phase 1: Proceed without query/access history.
 
-Inspect Jules logs to locate failure.
+Phase 2: Revisit once redaction, APIs, or views are available.
 
-Work with Nawaz + Rick and involve SRE to complete missing steps (service file, etc.).
+Temporary access may be possible if Atlan can demonstrate configurability to not consume restricted data.
 
-Noted limited availability today due to an eye appointment, but will continue work.
+3.6 Upcoming Platform Capability
 
-Tableau + Snowflake connectors (vendor dependency):
+A new redacted query-history view is expected later this month.
 
-Met vendor yesterday; clarified auth requirements.
+This may reduce or eliminate the need for raw query/access history.
 
-Vendor committed delivery by January 30 for token-based auth mechanism.
+Limitation: Snowflake retains usage data for only one year.
 
-Pilot consumers (CCB) have confirmed scope of assets to crawl for Tableau/Snowflake.
+3.7 Onboarding & Compute
 
-Implementation progress is blocked until vendor delivers updated token-based auth.
+DataCompass must onboard as a consuming application.
 
-Auth approach details:
+Dedicated warehouse and CLID-based billing required.
 
-Tokens based on ID Anywhere.
+This onboarding can proceed independently of metadata access decisions.
 
-Connector will expect token as a Kubernetes secret.
+4. Decisions
 
-A separate process will be needed to generate/refresh token and update secrets.
+Proceed with Snowflake onboarding and warehouse setup immediately.
 
-Stephen pointed Avinash to a library/module (via GSM) that supports ID Anywhere and offered to help.
+Treat query history and access history as Phase 2 items.
 
-Decisions / Agreements
+Do not create a DST until Atlan clarifies constraints and requirements.
 
-No compensation numbers are to be discussed on public calls (explicit reminder issued).
+Evaluate the upcoming redacted view as a potential interim solution.
 
-Plan to collaborate more starting Monday once India holiday ends and Nishant is expected back.
+5. Action Items
 
-Blockers / Risks
+(See Tracker Section below)
 
-ATLAN-1088 blocked by k3s crash/failed reinstall, preventing kubectl remoting progress.
+6. Next Steps
 
-Tableau/Snowflake connector rollout blocked on vendor delivery (Jan 30) + secret/token automation work.
+Schedule a follow-up checkpoint meeting.
 
-Next Actions
+Include Atlan representatives in the next discussion.
 
-Stephen: Continue k3s recovery (Jules logs + SRE steps) with Nawaz/Rick.
-
-Emmanuel: Review unique-index handling + template with Bharath/Sindhuri (11:00 AM).
-
-Sindhuri: Schedule alignment meeting with Pallavi/Sweetie/Bharath/Emmanuel to validate API change impacts.
-
-Team: Prepare for token-as-secret workflow (token generator + Kubernetes secret update process) once vendor delivers auth changes.
+Provide status update to management ahead of the 31st.
